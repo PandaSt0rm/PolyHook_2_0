@@ -87,7 +87,14 @@ PLH::insts_t PLH::ZydisDisassembler::disassemble(
 
 		for (int i = 0; i < insInfo.operand_count; i++) {
 			auto op = decoded_operands[i];
-			if (op.type == ZYDIS_OPERAND_TYPE_MEMORY && op.mem.type == ZYDIS_MEMOP_TYPE_MEM && op.mem.disp.has_displacement && op.mem.base == ZYDIS_REGISTER_NONE && op.mem.segment != ZYDIS_REGISTER_DS && inst.isIndirect()) {
+			// Zydis v5 removed has_displacement field; check disp.size instead
+			// Zydis v4 has has_displacement boolean field
+#if ZYDIS_VERSION_MAJOR(ZYDIS_VERSION) >= 5
+			bool hasDisp = op.mem.disp.size != 0;
+#else
+			bool hasDisp = op.mem.disp.has_displacement;
+#endif
+			if (op.type == ZYDIS_OPERAND_TYPE_MEMORY && op.mem.type == ZYDIS_MEMOP_TYPE_MEM && hasDisp && op.mem.base == ZYDIS_REGISTER_NONE && op.mem.segment != ZYDIS_REGISTER_DS && inst.isIndirect()) {
 				inst.setIndirect(false);
 			}
 		}
